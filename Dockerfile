@@ -8,6 +8,6 @@ COPY terrat_runner /terrat_runner
 
 COPY proxy/bin /usr/local/proxy/bin
 
-RUN apt install python-hcl2
+RUN apt install python3-pip && pip install --no-cache-dir python-hcl2
 
 ENTRYPOINT ["/entrypoint.sh"]
