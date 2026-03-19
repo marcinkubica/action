@@ -9,3 +9,5 @@ the following operations:
 
 The action is meant to be executed manually (via a `workflow_dispatch` event)
 rather than automatically triggered.
+
+Triggering!
