@@ -413,6 +413,7 @@ def generate_terrateam_config(
         # Build file_patterns list
         file_patterns = [
             "${DIR}/terragrunt.hcl",
+            "${DIR}/module.yaml",
             "${DIR}/*.tf",
             "${DIR}/*.tfvars",
         ]
