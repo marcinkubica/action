@@ -407,7 +407,15 @@ def generate_terrateam_config(
     if "dirs" not in output_config:
         output_config["dirs"] = {}
 
+    # Collect existing dir entries from input config to preserve user overrides
+    existing_dirs = input_config.get("dirs", {})
+
     for dir_path in terragrunt_dirs:
+        config_key = dir_path if dir_path else "."
+
+        # Check if this dir already exists in the input config
+        existing = existing_dirs.get(config_key)
+
         deps = all_dependencies.get(dir_path, {})
 
         # Build file_patterns list
@@ -435,13 +443,22 @@ def generate_terrateam_config(
         for dep_dir in dependency_graph.get(dir_path, []):
             file_patterns.append(f"{dep_dir}/terragrunt.hcl")
 
-        # Build dir configuration
-        dir_config = {
-            "tags": ["terragrunt"],
-            "when_modified": {
-                "file_patterns": file_patterns
+        if existing:
+            # Merge: preserve existing tags and settings, enrich file_patterns
+            dir_config = existing.copy()
+            existing_patterns = dir_config.get("when_modified", {}).get("file_patterns", [])
+            merged_patterns = list(dict.fromkeys(existing_patterns + file_patterns))
+            if "when_modified" not in dir_config:
+                dir_config["when_modified"] = {}
+            dir_config["when_modified"]["file_patterns"] = merged_patterns
+        else:
+            # Build new dir configuration
+            dir_config = {
+                "tags": ["terragrunt"],
+                "when_modified": {
+                    "file_patterns": file_patterns
+                }
             }
-        }
 
         # Add depends_on if there are dependencies
         direct_deps = dependency_graph.get(dir_path, [])
@@ -450,8 +467,6 @@ def generate_terrateam_config(
             depends_on_query = " or ".join([f"dir:{dep}" for dep in direct_deps])
             dir_config["when_modified"]["depends_on"] = depends_on_query
 
-        # Add to output config (use empty string for root, otherwise the dir path)
-        config_key = dir_path if dir_path else "."
         output_config["dirs"][config_key] = dir_config
 
     return output_config
